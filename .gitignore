@@ -1,0 +1,33 @@
+# Arquivos de pacotes
+*.tgz
+*.tar.gz
+*.tar
+
+# Arquivos de configuração específicos do ambiente
+.env
+config.yaml
+
+# Arquivos temporários
+*.swp
+*~
+# Diretórios
+.DS_Store
+__pycache__/
+.cache/
+.idea/
+.vscode/
+
+# Dependências
+node_modules/
+vendor/
+
+# Logs
+*.log
+
+# Arquivos específicos do Helm
+.helmignore
+
+# Arquivos específicos do sistema operacional
+.Thumbs.db
+ehthumbs.db
+Desktop.ini
