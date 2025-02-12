@@ -12,6 +12,6 @@ echo "🗑 Removendo Node1 Executor..."
 helm uninstall node1-executor --namespace brldigital-t
 
 echo "🗑 Removendo Node1 Prover..."
-helm uninstall node1-prover --namespace brldigital-t"
+helm uninstall node1-prover --namespace brldigital-t
 
 echo "✅ Todas as remoções foram concluídas!"
