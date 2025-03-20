@@ -1,8 +1,7 @@
 nameOverride: infra-kafka
 
-
-defaultImage: apache/kafka
-defaultImageTag: 3.9.0
+defaultImage: hamsaprivacyacrdev.azurecr.io/kafka
+defaultImageTag: 4.0.0-fixed
 defaultImagePullPolicy: "Always"
 
 envs:

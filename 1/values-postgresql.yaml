@@ -1,8 +1,8 @@
 #nameOverride: postgre
 
 #imagePullSecrets: []
-defaultImage: ubuntu/postgres
-defaultImageTag: 14-22.04_beta
+defaultImage: hamsaprivacyacrdev.azurecr.io/postgres
+defaultImageTag: latest
 defaultImagePullPolicy: "Always"
 
 envs:

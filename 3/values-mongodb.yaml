@@ -1,8 +1,8 @@
 #nameOverride: node1-mongo
 
 #imagePullSecrets: []
-defaultImage: mongodb/mongodb-community-server
-defaultImageTag: 8.0.3-ubuntu2204-20241124T102232Z
+defaultImage: hamsaprivacyacrdev.azurecr.io/mongodb
+defaultImageTag: 0.0.1
 defaultImagePullPolicy: "Always"
 
 envs:
