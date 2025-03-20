@@ -1,0 +1,51 @@
+
+#nameOverride: browser-business
+
+imagePullSecrets: {}
+defaultImage: hamsaprivacyacrdev.azurecr.io/hamsa-msft-browser-business
+defaultImageTag: 0.0.2
+defaultImagePullPolicy: "Always"
+
+envs:
+  DB_HOST: browser-postgresql-postgresql
+  DB_PORT: "5432"
+  DB_USERNAME: hamsa-dev
+  DB_PASSWORD: dev123
+  DB_DATABASE: transaction
+  L2_1_URL: http://qa-node1-node.hamsa-ucl.com:8123
+  L2_2_URL: http://qa-node2-node.hamsa-ucl.com:8123
+  L2_3_URL: http://qa-node3-node.hamsa-ucl.com:8123
+  L2_4_URL: http://qa-node4-node.hamsa-ucl.com:8123
+  DISCOVERY_ADDRESS: 0x34D67F35C206FDEAd12b69443c7985f7507667D3
+  VITE_L2_URL: http://54.219.188.82:8545
+  VITE_APP_TITLE: Hamsa Privacy - Node Explorer
+
+services:
+  "web":
+    type: LoadBalancer
+    ports:
+      - port: 3000
+        protocol: TCP
+
+statefulSets:
+  "" :
+    replicas: 1
+    containers:
+      - name: app
+        envFrom:
+          - configMapRef:
+              name: browser-business-envs
+              optional: false
+
+        preemptionPolicy: Never
+#        resources:
+#          requests:
+#            memory: "1Gi"
+
+
+    nodeSelector:
+      purpose: "browser"
+    imagePullSecret: "ucl-secret"
+
+
+

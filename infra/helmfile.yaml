@@ -1,0 +1,21 @@
+releases:
+  - name: kafka
+    namespace: infra
+    chart: ../chart
+    version: 3.9.0
+    values:
+      - ./values-kafka.yaml
+
+  # - name: grafana
+  #   namespace: infra
+  #   chart: ../chart
+  #   version: 2.8.0
+  #   values:
+  #     - ./values-grafana.yaml
+
+  # - name: prometheus
+  #   namespace: infra
+  #   chart: ../chart
+  #   version: 2.8.0
+  #   values:
+  #     - ./values-prometheus.yaml

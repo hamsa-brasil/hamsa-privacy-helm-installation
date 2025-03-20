@@ -1,0 +1,72 @@
+nameOverride: infra-kafka
+
+
+defaultImage: apache/kafka
+defaultImageTag: 3.9.0
+defaultImagePullPolicy: "Always"
+
+envs:
+  KAFKA_NODE_ID: "1"
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://localhost:9093
+  KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://infra-kafka-kafka.infra.svc.cluster.local:9092
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  KAFKA_NUM_PARTITIONS: "3"
+
+
+services:
+  "kafka":
+    type: LoadBalancer
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: qa-kafka.hamsa-ucl.com
+      external-dns.alpha.kubernetes.io/ttl: "3000"
+    ports:
+      - port: 9092
+        protocol: TCP
+
+
+statefulSets:
+  "" :
+    replicas: 1
+    containers:
+      - name: kafka
+        envFrom:
+          - configMapRef:
+              name: infra-kafka-envs
+              optional: false
+        env:
+          - name: max.poll.interval.ms
+            value: "1800000"
+
+        volumeMounts:
+          - name: kafka-data
+            mountPath: /opt/kafka/logs
+
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+
+    securityContext:
+      runAsUser: 0
+
+    nodeSelector:
+      purpose: "other"
+    volumeClaimTemplates:
+      - metadata:
+          name: kafka-data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          storageClassName: "managed-csi"
+          resources:
+            requests:
+              storage: 40Gi

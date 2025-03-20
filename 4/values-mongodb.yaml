@@ -1,0 +1,48 @@
+#nameOverride: node1-mongo
+
+#imagePullSecrets: []
+defaultImage: mongodb/mongodb-community-server
+defaultImageTag: 8.0.3-ubuntu2204-20241124T102232Z
+defaultImagePullPolicy: "Always"
+
+envs:
+  MONGODB_INITDB_ROOT_USERNAME: hamsa-dev
+  MONGODB_INITDB_ROOT_PASSWORD: dev123
+
+
+services:
+  "mongodb":
+    ports:
+      - port: 27017
+        protocol: TCP
+
+statefulSets:
+  "" :
+    replicas: 1
+    containers:
+      - name: mongodb
+        envFrom:
+          - configMapRef:
+              name: mongodb-envs
+              optional: false
+
+        volumeMounts:
+          - name: app-data
+            mountPath: /data/db
+
+    # imagePullSecret: "ucl-secret"
+    nodeSelector:
+      purpose: other
+
+    securityContext:
+      runAsUser: 0
+
+    volumeClaimTemplates:
+      - metadata:
+          name: app-data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          storageClassName: "managed-csi"
+          resources:
+            requests:
+              storage: 40Gi

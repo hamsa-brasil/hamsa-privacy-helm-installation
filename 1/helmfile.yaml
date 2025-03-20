@@ -1,0 +1,61 @@
+releases:
+  - name: node
+    namespace: node1
+    chart: ../chart
+    version: 2.8.0
+    values:
+      - ../qa-envs.yaml
+      - ./values-app-envs.yaml
+      - ./values-app-msft-node.yaml
+    needs:
+      - postgresql
+      - mongodb
+      - executor
+
+  - name: node-rollup
+    namespace: node1
+    chart: ../chart
+    version: 2.8.0
+    values:
+      - ./values-app-msft-node-rollup.yaml
+    needs:
+      - postgresql
+      - mongodb
+
+  - name: prover
+    namespace: node1
+    chart: ../chart
+    version: 2.8.0
+    values:
+      - ./values-app-msft-prover.yaml
+    needs:
+      - postgresql
+
+
+  - name: executor
+    namespace: node1
+    chart: ../chart
+    version: 2.8.0
+    values:
+      - ../qa-envs.yaml
+      - ./values-app-envs.yaml
+      - ./values-app-msft-executor.yaml
+    needs:
+      - postgresql
+
+
+  - name: postgresql
+    namespace: node1
+    chart: ../chart
+    version: 16.0.1
+    values:
+      - ./values-postgresql.yaml
+
+  - name: mongodb
+    namespace: node1
+    chart: ../chart
+    version: 16.0.1
+    values:
+      - ./values-mongodb.yaml
+
+

@@ -1,0 +1,45 @@
+nameOverride: msft-node-rollup
+
+imagePullSecrets: {}
+defaultImage: hamsaprivacyacrdev.azurecr.io/hamsa-msft-node-rollup
+defaultImageTag: 0.0.8
+defaultImagePullPolicy: "Always"
+
+envs:
+  BROKERADDRESS: infra-kafka-kafka.infra.svc.cluster.local:9092
+  SENDTOPIC: topic_generate_proof_node4
+  GROUPID: ucl_node4
+  RECEIVETOPIC: topic_callback_proof_node4
+  KEY: node4
+  NUMPARTITIONS: "5"
+  DBUSER: hamsa-dev
+  DBPASSWORD: dev123
+  DBNAME: state_db
+  DBHOST: postgresql-postgresql
+  DBPORT: "5432"
+  MONGOUSER: hamsa-dev
+  MONGOPASSWORD: dev123
+  MONGODATABASE: rollup
+  MONGOHOST: mongodb-mongodb
+  MONGOPORT: "27017"
+
+
+statefulSets:
+  "" :
+    imagePullSecret: ecr-secret
+    replicas: 1
+    containers:
+      - name: app
+        envFrom:
+          - configMapRef:
+              name: msft-node-rollup-envs
+              optional: true
+        command:
+          - "/bin/sh"
+          - "-c"
+          - "/app/hamsa-msft-node-rollup_main run --cfg /app/node.config.toml"
+        resources:
+          requests:
+            memory: "1Gi"
+    nodeSelector:
+      purpose: "other"

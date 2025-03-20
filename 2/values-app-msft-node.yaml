@@ -1,0 +1,122 @@
+nameOverride: msft-node
+
+imagePullSecrets: { }
+defaultImage: hamsaprivacyacrdev.azurecr.io/hamsa-msft-node
+defaultImageTag: 0.0.8
+defaultImagePullPolicy: "Always"
+
+envs:
+  NODEDB_URL: postgresql-postgresql:5432
+  EXECUTOR_URI: msft-executor-api:50081
+  EXECUTOR_UCLURI: msft-executor-api:50081
+  STATE_DB_HOST: postgresql-postgresql
+  POOL_DB_HOST: postgresql-postgresql
+  EVENTLOG_DB_HOST: postgresql-postgresql
+  HASHDB_HOST: postgresql-postgresql
+  DVP_DVPTRANSACTONPRIORITYPERCENT: "50"
+  ROLLUP_VERIFYCONFIG_BIC: "itau"
+  KAFKA_BROKERADDRESS: infra-kafka-kafka.infra.svc.cluster.local:9092
+  KAFKA_SENDTOPIC: "event"
+  KAFKA_GROUPID: "ucl_event_node2"
+  KAFKA_RECEIVETOPIC: "event"
+  KAFKA_KEY: "node2"
+  KAFKA_NUMPARTITIONS: "5"
+  L2_PRIVATEKEYPATH: "/app/keys/node1_private.key"
+  L1_BANKADMINADDRESS: 0x9E46a01F1A486095A073BFeB4B3c9e106dfB0e7E
+  L1_BANKADMINPRIVATEKEY: 6741001f80a9194d8d65f04d8b420940e83babc1a1dea5afa8775c395ed14ae8
+
+
+
+
+
+
+services:
+  "api":
+    type: LoadBalancer
+    ports:
+      - port: 8123
+        protocol: TCP
+
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: qa-node2-node.hamsa-ucl.com
+      external-dns.alpha.kubernetes.io/ttl: "3000"
+
+  "metrics":
+    ports:
+      - port: 2112
+        protocol: TCP
+
+statefulSets:
+  "":
+    replicas: 1
+    containers:
+      - name: app
+        envFrom:
+          - configMapRef:
+              name: msft-node-config
+              optional: true
+          - configMapRef:
+              name: msft-node-envs
+              optional: true
+          - configMapRef:
+              name: msft-node-secrets
+              optional: true
+
+        volumeMounts:
+          - name: node-rsa-sk
+            mountPath: /app/keys
+
+        command:
+          - "/bin/sh"
+          - "-c"
+          #          - "/app/hamsa-msft-node_main run --network custom --components=synchronizer,rpc,sequencer,l2gaspricer,eth-tx-manager,rollup --custom-network-file /app/genesis.config.json --cfg /app/node.config.toml"
+          - "/app/hamsa-msft-node_main run --network custom --components=synchronizer,rpc,sequencer,l2gaspricer,eth-tx-manager --custom-network-file /app/genesis.config.json --cfg /app/node.config.toml"
+        ports:
+          - containerPort: 8123
+            name: api
+            protocol: TCP
+
+          - containerPort: 2112
+            name: metrics
+            protocol: TCP
+
+    volumes:
+      - name: node-rsa-sk
+        type: configMap
+        originalName: msft-node-node-rsa-sk
+
+    nodeSelector:
+      purpose: "other"
+
+configMaps:
+  node-rsa-sk:
+    data:
+      node1_private.key :  |
+        -----BEGIN PRIVATE KEY-----
+        MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQChy4pRB2s+uTdd
+        jtBLcABrqVkB0Lbrzrj1kfJ80YTK0XaJ83y58vHlXHMrCfogXieVHr+jOpWOrF5Y
+        5VS9CAr99ffGAPnUL9CGIp13GmNF2mm3N3DlDvUU6lti3Hb2swNgqHn1Qus9p7Fb
+        H+4y78BQxI/PGeiX5P+3wZ67MQzn4bQK1RsVwBJHy0fr7Sp+lhvKSDDcqHOBE6F5
+        vljDHd2PDGszNHLiAHmlUe3zSYhpT9nQA6ODUi02w/2oFydrgnwyobpXhOLx8mCL
+        PF2p5KMKirgzFgfhJSkq+2LjgCqXt5w48g4GzqNKE0IopAm4oQR8Acwo0E72ynvJ
+        5EYZnGDBAgMBAAECggEAIka4msnzkmoyrINg5Vpo/GX4EUZiOjqlPIEa2g6ZD06o
+        yjjnJ42saWbYjzmh39GSmSjWeIIkxQEHS9XpydI2Ye8F+tCiHK20g3Y53c2dUmMf
+        Gk2IgT5V9YRgr+T83u61vHh0vdzbcUhhbmipUekw2OuLe9iFSgidlBRUyFtv3H/C
+        GhZKURpISXn5LRJTZuTU6+SoZu5yroEu41DJpY26r+fBAyEuqeuyKaLKNBiB+v56
+        GjgMRqMcFhQArI2PZZfxR90mfwdsY+jH6KaAyQIuLzo/73syDFUnuqyTcN1OpfRL
+        VNjLWsnNq6FjNoLlbOFLBk4LufyUZWA7/BBxkGewAQKBgQDSIsZGaCIopLXorGZI
+        /TRgrUbpZS/KuoNLxNKD9CGdZ1kq+OlqzaLWalMtLVemFtm/mRtSG2Ri1xe8E4VD
+        dKaxV3BxXgUnMJ7eIf41KmRs/7c0TOebhEcvbOUsqL4+WdZORZDN6cXTFm+3CLLP
+        pppxijRTgC3FL9A2+q/kKeihIQKBgQDFG8CSBAuiBsHVa2tviHU0kp0KxlXkNCoo
+        7cqfz12Z9Q9aSI+W9R/UjBtfXWKweT9bU47h1ylCfzzpI5yDETNu0JnTHMqtm1JC
+        SuKtQ6G11PpTQ2wgjWlxcsdBj6JwWUMm/NFtL03WqmZsOUZXD1IGrAL6r7WrmCHZ
+        fet7zu6roQKBgQCi1Q+Pv2G43OmZQv5/0LWltKAee6ptDdpv/DSky6jAsDUId5lo
+        ibCFNh7+AwTITyysq5fgKBnB/asGspmxi9Mf2QHo11Jm6+Yve2fhCtiHHiB5Bp7y
+        g64lsdxknt3MsxC91mo/JceFqv0meDcXcaJ8GPwzOEA/bK2L7PYfd9osAQKBgCjY
+        mG5p0jNQbSiZ6xig0ZEEdPC/qxrwSHBU3rGBWmdGJllSQhdJUsBMDHwVsRba+Wsm
+        hKx+VvmFvoydqZhrnxnutoHOLJ4PWtuMAy9enYs9yGYqyaRxSZGN9Ia8ii/3/3d7
+        2rZioCHFDBaPQ+lUrm3dhXyHnwEhNJqKgpsUhdchAoGAfgOOVgmYToTBYnaMlFjL
+        bVaaTxd3zfrp0izjgKTPF9zWct2cKsBSlHGXrGLcnVGS89ifGZHurEdsIxXFhoZ1
+        4coe/afAThzl587pfy5lUnf1Lg30oSq8q5n+p+79i5RvfG/LoxikP4DHx/HgEVMg
+        POFAO2QdFtQInOaKhLczrn0=
+        -----END PRIVATE KEY-----

@@ -1,0 +1,67 @@
+
+#nameOverride: browser
+
+imagePullSecrets: {}
+defaultImage: hamsaprivacyacrdev.azurecr.io/hamsa-msft-browser
+defaultImageTag: 0.0.8
+defaultImagePullPolicy: "Always"
+
+
+envs:
+  API_URL: http://qa-node4-node.hamsa-ucl.com:8123
+  VERIFY_CONTRACT_ADDRESS: 0xcd1E859D886fDf2C05CEB4D8240262FaFd6C6b7F
+  QUERY_NODE: http://54.193.75.6:8545
+  USERS: '[{"email":"admin@node4.com","address":"0x9E46a01F1A486095A073BFeB4B3c9e106dfB0e7E","privateKey":"6741001f80a9194d8d65f04d8b420940e83babc1a1dea5afa8775c395ed14ae8","password":"Test@123","role":"admin"},{"email":"user@node4.com","address":"0x786ff0e4ccB190C039940955a1E50a7681538Edb","privateKey":"ee9cc2c60beca5d9e38747a065d0c7d5dccf9d2f189850756444ef06b856f932","password":"Test@123","role":"normal"}]'
+
+
+services:
+  "web":
+    type: LoadBalancer
+    ports:
+      - port: 8080
+        protocol: TCP
+
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: qa-browser4.hamsa-ucl.com
+      external-dns.alpha.kubernetes.io/ttl: "3000"
+
+statefulSets:
+  "" :
+    replicas: 1
+    containers:
+      - name: app
+        envFrom:
+          - configMapRef:
+              name: browser-node4-envs
+              optional: false
+
+
+        preemptionPolicy: Never
+        resources:
+          requests:
+            memory: "1Gi"
+
+        volumeMounts:
+          - name: nginx-url
+            mountPath: /usr/share/nginx/html2
+
+        ports:
+          - containerPort: 8080
+            name: web
+            protocol: TCP
+
+    volumes:
+      - name: nginx-url
+        type: configMap
+        originalName: browser-node4-nginx-url
+
+    nodeSelector:
+      purpose: "other"
+    imagePullSecret: "ucl-secret"
+
+
+#configMaps:
+#  nginx-url:
+#    data:
+#      url.txt: |
+#        http://qa-node4-node.hamsa-ucl.com:8123,0x552c8Cd1E07fb790d9f78f2cf4337aEFe21587a8

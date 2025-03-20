@@ -1,0 +1,60 @@
+nameOverride: msft-executor
+
+imagePullSecrets: {}
+defaultImage: hamsaprivacyacrdev.azurecr.io/hamsa-msft-executor
+defaultImageTag: 0.0.8
+defaultImagePullPolicy: "Always"
+
+envs:
+  NODEDB_URL: postgresql-postgresql:5432
+
+services:
+  "api":
+    ports:
+      - port: 50081
+        protocol: TCP
+
+statefulSets:
+  "" :
+    imagePullSecret: ecr-secret
+    replicas: 1
+    containers:
+      - name: app
+        envFrom:
+          - configMapRef:
+              name: msft-executor-config
+              optional: true
+          - configMapRef:
+              name: msft-executor-envs
+              optional: true
+          - configMapRef:
+              name: msft-executor-secrets
+              optional: true
+        command:
+          - "/bin/sh"
+          - "-c"
+          - "/app/hamsa-msft-executor_main run --cfg /app/executor.config.toml --custom-network-file /app/genesis.config.json"
+        ports:
+          - containerPort: 50081
+            name: executor-api
+            protocol: TCP
+        volumeMounts:
+          - name: app-data
+            mountPath: /app/db/executor-db
+        preemptionPolicy: Never
+#        resources:
+#          requests:
+#            memory: "1Gi"
+#          limits:
+#            memory: "2Gi"
+    nodeSelector:
+      purpose: "other"
+    volumeClaimTemplates:
+      - metadata:
+          name: app-data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          storageClassName: "managed-csi"
+          resources:
+            requests:
+              storage: 40Gi

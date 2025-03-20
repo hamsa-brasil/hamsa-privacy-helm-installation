@@ -1,0 +1,134 @@
+nameOverride: prometheus
+
+imagePullSecrets: {}
+defaultImage: ubuntu/prometheus
+defaultImageTag: 2.45.0-22.04_stable
+defaultImagePullPolicy: "Always"
+
+services:
+  "prometheus":
+    type: LoadBalancer
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: qa-prometheus.hamsa-ucl.com
+      external-dns.alpha.kubernetes.io/ttl: "3000"
+    ports:
+      - port: 9090
+        protocol: TCP
+
+statefulSets:
+  "" :
+    replicas: 1
+    containers:
+      - name: prometheus
+        ports:
+          - containerPort: 9090
+            name: prometheus
+            protocol: TCP
+        volumeMounts:
+          - name: prometheus-data
+            mountPath: /prometheus
+          - name: prometheus-setup
+            mountPath: /etc/prometheus/
+        preemptionPolicy: Never
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "2Gi"
+    nodeSelector:
+      purpose: "other"
+
+    volumes:
+      - name: prometheus-setup
+        type: configMap
+        originalName: prometheus-prometheus-setup
+
+    volumeClaimTemplates:
+      - metadata:
+          name: prometheus-data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          storageClassName: "managed-csi"
+          resources:
+            requests:
+              storage: 40Gi
+
+configMaps:
+  prometheus-setup:
+    data:
+      prometheus.yml: |
+        # my global config
+        global:
+          scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+          evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+          # scrape_timeout is set to the global default (10s).
+
+        # Alertmanager configuration
+        alerting:
+          alertmanagers:
+            - static_configs:
+                - targets:
+                  # - alertmanager:9093
+
+        # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+        rule_files:
+          # - "first_rules.yml"
+          # - "second_rules.yml"
+
+        # A scrape configuration containing exactly one endpoint to scrape:
+        # Here it's Prometheus itself.
+        scrape_configs:
+          # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+          - job_name: "prometheus"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["localhost:9090"]
+
+          - job_name: "node1-node"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-node-metrics.node1.svc.cluster.local:2112"]
+
+          - job_name: "node2-node"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-node-metrics.node2.svc.cluster.local:2112"]
+
+          - job_name: "node3-node"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-node-metrics.node3.svc.cluster.local:2112"]
+
+          - job_name: "node4-node"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-node-metrics.node4.svc.cluster.local:2112"]
+          
+          - job_name: "node1-prover"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-prover-metrics.node1.svc.cluster.local:8080"]
+        
+          - job_name: "node2-prover"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-prover-metrics.node2.svc.cluster.local:8080"]
+        
+          - job_name: "node3-prover"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-prover-metrics.node3.svc.cluster.local:8080"]
+        
+          - job_name: "node4-prover"
+            # metrics_path defaults to '/metrics'
+            # scheme defaults to 'http'.
+            static_configs:
+              - targets: ["msft-prover-metrics.node4.svc.cluster.local:8080"]

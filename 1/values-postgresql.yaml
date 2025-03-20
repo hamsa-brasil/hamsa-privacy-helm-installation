@@ -1,0 +1,111 @@
+#nameOverride: postgre
+
+#imagePullSecrets: []
+defaultImage: ubuntu/postgres
+defaultImageTag: 14-22.04_beta
+defaultImagePullPolicy: "Always"
+
+envs:
+  POSTGRES_USER: hamsa-dev
+  POSTGRES_PASSWORD: dev123
+
+services:
+  postgresql:
+    type: LoadBalancer
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: qa-node1-postgres.hamsa-ucl.com
+      external-dns.alpha.kubernetes.io/ttl: "3000"
+    ports:
+      - port: 5432
+        protocol: TCP
+
+statefulSets:
+  "" :
+    replicas: 1
+    containers:
+      - name: postgresql
+        args: [ "-c", "max_connections=500" ]
+        command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /data/db/pgdata/data
+            chown -R postgres:postgres /data/db/pgdata/data
+            chmod -R 750 /data/db/pgdata/data
+            exec docker-entrypoint.sh postgres
+        env:
+          - name: PGDATA
+            value: /data/db/pgdata/data
+        volumeMounts:
+          - name: postgresql-data
+            mountPath: /data/db/pgdata
+          - name: init-sql-vol
+            mountPath: /docker-entrypoint-initdb.d
+        envFrom:
+          - configMapRef:
+              name: postgresql-envs
+              optional: false
+
+    #   imagePullSecret: "ucl-secret"
+    volumes:
+      - name: init-sql-vol
+        type: configMap
+        originalName: postgresql-init-sql
+
+    nodeSelector:
+      purpose: other
+
+    volumeClaimTemplates:
+      - metadata:
+          name: postgresql-data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          storageClassName: "managed-csi"
+          resources:
+            requests:
+              storage: 40Gi
+
+
+configMaps:
+  init-sql:
+    data:
+      init.sql: |
+        CREATE DATABASE state_db;
+        CREATE DATABASE event_db;
+        CREATE DATABASE pool_db;
+        CREATE DATABASE rpc_db;
+        CREATE DATABASE prover_db;
+
+        \c event_db;
+
+
+        CREATE TYPE level_t AS ENUM ('emerg', 'alert', 'crit', 'err', 'warning', 'notice', 'info', 'debug');
+
+        CREATE TABLE public.event (
+                            id BIGSERIAL PRIMARY KEY,
+                            received_at timestamp WITH TIME ZONE default CURRENT_TIMESTAMP,
+                            ip_address inet,
+                            source varchar(32) not null,
+                            component varchar(32),
+                            level level_t not null,
+                            event_id varchar(32) not null,
+                            description text,
+                            data bytea,
+                            json jsonb
+                        );
+        
+        
+        \c state_db;
+
+        CREATE SCHEMA IF NOT EXISTS state;
+
+        CREATE TABLE IF NOT EXISTS state.address_role
+        (
+        address character varying COLLATE pg_catalog."default" NOT NULL,
+        role_id integer,
+        comment character varying COLLATE pg_catalog."default",
+        CONSTRAINT address_role_pkey PRIMARY KEY (address)
+        );
+
+        INSERT INTO "state"."address_role" ("address", "role_id", "comment") VALUES ('0xe46Fe251dd1d9FfC247bc0DDb6D61e4EE4416ecB', 1, NULL);
+        INSERT INTO "state"."address_role" ("address", "role_id", "comment") VALUES ('0x9E46a01F1A486095A073BFeB4B3c9e106dfB0e7E', 1, NULL);

@@ -1,0 +1,73 @@
+nameOverride: msft-prover
+
+imagePullSecrets: {}
+defaultImage: hamsaprivacyacrdev.azurecr.io/hamsa-msft-prover
+defaultImageTag: 0.0.8
+defaultImagePullPolicy: "Always"
+
+envs:
+  bootstrap_servers: infra-kafka-kafka.infra.svc.cluster.local:9092
+  kafka_brokers: infra-kafka-kafka.infra.svc.cluster.local:9092
+  kafka_group_id: group_rollup_node3
+  kafka_topic_generate_proof: topic_generate_proof_node3
+  kafka_consumer_client_num: "2"
+  postgres_host: postgresql-postgresql
+  postgres_port: "5432"
+  postgres_user: "hamsa-dev"
+  postgres_password: "dev123"
+  postgres_db: "state_db"
+  max_connections: "20"
+  metrics_port: "8080"
+  enable_metrics: "true"
+  RAYON_NUM_THREADS: "10"
+
+services:
+  "metrics":
+    ports:
+      - port: 8080
+        protocol: TCP
+
+statefulSets:
+  "" :
+    imagePullSecret: ecr-secret
+    replicas: 1
+
+    containers:
+      - name: app
+        envFrom:
+          - configMapRef:
+              name: msft-prover-config
+              optional: true
+          - configMapRef:
+              name: msft-prover-envs
+              optional: true
+          - configMapRef:
+              name: msft-prover-secrets
+              optional: true
+
+        preemptionPolicy: Never
+        volumeMounts:
+          - name: tmp
+            mountPath: /app/data
+
+        resources:
+          requests:
+            memory: "8Gi"
+        securityContext:
+          oomScoreAdj: -1000  # 表示禁止 OOM Killer 终止该进程
+        command:
+          - "/bin/sh"
+          - "-c"
+          - "/app/server"
+
+        ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+    volumes:
+      - name: tmp
+        path: /tmp
+        type: hostPath
+
+    nodeSelector:
+      purpose: "prover"
